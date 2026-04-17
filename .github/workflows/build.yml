@@ -1,0 +1,34 @@
+name: Build Windows Executable
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:   # allows manual trigger from the GitHub website
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller pandas openpyxl python-docx
+
+      - name: Build executable
+        run: |
+          pyinstaller --noconfirm --onefile --windowed --name "EHDN_PubMed_Parser" main.py
+
+      - name: Upload executable as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EHDN_PubMed_Parser
+          path: dist/EHDN_PubMed_Parser.exe
+          retention-days: 30
