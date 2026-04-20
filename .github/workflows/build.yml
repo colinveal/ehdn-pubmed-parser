@@ -1,4 +1,4 @@
-name: Build Windows Executable
+name: Build Executables
 
 on:
   push:
@@ -7,7 +7,17 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            name: EHDN_PubMed_Parser_Windows
+            output: dist/EHDN_PubMed_Parser.exe
+          - os: macos-latest
+            name: EHDN_PubMed_Parser_Mac
+            output: dist/EHDN_PubMed_Parser
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -29,6 +39,6 @@ jobs:
       - name: Upload executable as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: EHDN_PubMed_Parser
-          path: dist/EHDN_PubMed_Parser.exe
+          name: ${{ matrix.name }}
+          path: ${{ matrix.output }}
           retention-days: 30
