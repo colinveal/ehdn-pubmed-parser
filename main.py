@@ -18,6 +18,7 @@ from tkinter import filedialog as fd
 from datetime import datetime
 from tkinter import messagebox as mbox
 from tkinter import simpledialog as sd
+from unidecode import unidecode
 import tkinter as tk
 
 class PMatch:
@@ -59,6 +60,9 @@ def ProcessCSV():
     csvfile = fd.askopenfilename(title='Select PubMedCSV File')
     cites = pd.read_csv(csvfile, encoding='utf8')
     return cites
+
+def normalize(s):
+    return unidecode(s).strip()
 
 def CompareNames(data, cites):
     rpublist = {}
@@ -103,6 +107,87 @@ def CompareNames(data, cites):
                                         apublist[paper].name.append(lname.rstrip().lower() + ' ' + fname.rstrip().lower())
                                     else:
                                         apublist[paper] = PMatch(lname.rstrip().lower() + ' ' + fname.rstrip().lower(),paper, temp[0][0], temp[0][1], temp[0][2] )
+    return rpublist, apublist
+
+def CompareNamesN(data, cites):
+    rpublist = {}
+    apublist = {}
+    # counter = 0
+    for cat, lname, fname in zip(data['Membership category'],data['Last name'], data['First name']):
+        if isinstance(cat, str):
+            if 'regular' not in cat and 'associated' not in cat:
+                continue
+        if isinstance(lname, str):
+            if 'http' in lname or 'http' in fname:
+                continue
+            for paper in hd_list.keys():
+                if len(paper) > 0:
+                    match = False
+                    for author in hd_list[paper]['authors']:
+                        if author.split(', ')[0].rstrip().lower() == lname.rstrip().lower():
+                            if author.split(', ')[1].rstrip().split(' ')[0].lower() == fname.rstrip().lower():
+                                match = True
+                                temp = cites[cites.PMID == int(paper)][["Authors", "Title", "Citation"]].values
+                                if cat == 'regular':
+                                    if paper in rpublist.keys():
+                                        rpublist[paper].name.append(lname.rstrip().lower() + ' ' + fname.rstrip().lower())
+                                    else:
+                                        rpublist[paper] = PMatch(lname.rstrip().lower() + ' ' + fname.rstrip().lower(),paper, temp[0][0], temp[0][1], temp[0][2] )
+                                    # rpublist.add(lname.rstrip().lower() + '\t' + fname.rstrip().lower() + '\t' + temp[0][0] + '\t' + temp[0][1] + ' ' + temp[0][2] + ' PMID:' + paper)
+                                if cat == 'associated':
+                                    if paper in apublist.keys():
+                                        apublist[paper].name.append(
+                                            lname.rstrip().lower() + ' ' + fname.rstrip().lower())
+                                    else:
+                                        apublist[paper] = PMatch(lname.rstrip().lower() + ' ' + fname.rstrip().lower(),
+                                                                 paper, temp[0][0], temp[0][1], temp[0][2])
+                                    # apublist.add(lname.rstrip().lower() + '\t' + fname.rstrip().lower() + '\t' + temp[0][0] + '\t' + temp[0][1] + ' ' + temp[0][2] + ' PMID:' + paper)
+                            elif len(author.split(', ')[1].rstrip().split(' ')[0].lower()) == 1 and author.split(', ')[1].rstrip().split(' ')[0].lower() == fname.rstrip()[0].lower():
+                                match = True
+                                temp = cites[cites.PMID == int(paper)][["Authors", "Title", "Citation"]].values
+                                if cat == 'regular':
+                                    if paper in rpublist.keys():
+                                        rpublist[paper].name.append(lname.rstrip().lower() + ' ' + fname.rstrip().lower())
+                                    else:
+                                        rpublist[paper] = PMatch(lname.rstrip().lower() + ' ' + fname.rstrip().lower(),paper, temp[0][0], temp[0][1], temp[0][2] )                                    # rpublist.add(lname.rstrip().lower() + '\t' + fname.rstrip().lower() + '\t' + temp[0][0] + '\t' + temp[0][1] + ' ' + temp[0][2] + ' PMID:' + paper)
+                                if cat == 'associated':
+                                    if paper in apublist.keys():
+                                        apublist[paper].name.append(lname.rstrip().lower() + ' ' + fname.rstrip().lower())
+                                    else:
+                                        apublist[paper] = PMatch(lname.rstrip().lower() + ' ' + fname.rstrip().lower(),paper, temp[0][0], temp[0][1], temp[0][2] )
+                    if match == False:
+                        for author in hd_list[paper]['authors']:
+                            if normalize(author.split(', ')[0]).rstrip().lower() == lname.rstrip().lower():
+                                if normalize(author.split(', ')[1]).rstrip().split(' ')[0].lower() == fname.rstrip().lower():
+                                    match = True
+                                    temp = cites[cites.PMID == int(paper)][["Authors", "Title", "Citation"]].values
+                                    if cat == 'regular':
+                                        if paper in rpublist.keys():
+                                            rpublist[paper].name.append(lname.rstrip().lower() + ' ' + fname.rstrip().lower())
+                                        else:
+                                            rpublist[paper] = PMatch(lname.rstrip().lower() + ' ' + fname.rstrip().lower(),paper, temp[0][0], temp[0][1], temp[0][2] )
+                                        # rpublist.add(lname.rstrip().lower() + '\t' + fname.rstrip().lower() + '\t' + temp[0][0] + '\t' + temp[0][1] + ' ' + temp[0][2] + ' PMID:' + paper)
+                                    if cat == 'associated':
+                                        if paper in apublist.keys():
+                                            apublist[paper].name.append(
+                                                lname.rstrip().lower() + ' ' + fname.rstrip().lower())
+                                        else:
+                                            apublist[paper] = PMatch(lname.rstrip().lower() + ' ' + fname.rstrip().lower(),
+                                                                     paper, temp[0][0], temp[0][1], temp[0][2])
+                                        # apublist.add(lname.rstrip().lower() + '\t' + fname.rstrip().lower() + '\t' + temp[0][0] + '\t' + temp[0][1] + ' ' + temp[0][2] + ' PMID:' + paper)
+                                elif len(author.split(', ')[1].rstrip().split(' ')[0].lower()) == 1 and normalize(author.split(', ')[1]).rstrip().split(' ')[0].lower() == fname.rstrip()[0].lower():
+                                    match = True
+                                    temp = cites[cites.PMID == int(paper)][["Authors", "Title", "Citation"]].values
+                                    if cat == 'regular':
+                                        if paper in rpublist.keys():
+                                            rpublist[paper].name.append(lname.rstrip().lower() + ' ' + fname.rstrip().lower())
+                                        else:
+                                            rpublist[paper] = PMatch(lname.rstrip().lower() + ' ' + fname.rstrip().lower(),paper, temp[0][0], temp[0][1], temp[0][2] )                                    # rpublist.add(lname.rstrip().lower() + '\t' + fname.rstrip().lower() + '\t' + temp[0][0] + '\t' + temp[0][1] + ' ' + temp[0][2] + ' PMID:' + paper)
+                                    if cat == 'associated':
+                                        if paper in apublist.keys():
+                                            apublist[paper].name.append(lname.rstrip().lower() + ' ' + fname.rstrip().lower())
+                                        else:
+                                            apublist[paper] = PMatch(lname.rstrip().lower() + ' ' + fname.rstrip().lower(),paper, temp[0][0], temp[0][1], temp[0][2] )
     return rpublist, apublist
 
 # Press the green button in the gutter to run the script.
@@ -154,7 +239,7 @@ if __name__ == '__main__':
             else:
                 quit()
 
-    rpublist, apublist = CompareNames(data, cites)
+    rpublist, apublist = CompareNamesN(data, cites)
 
     quarter = sd.askstring("Input", "What Quarter is this for? (i.e 1Q2025)")
 
@@ -172,6 +257,8 @@ if __name__ == '__main__':
         for i in item.authors.split(', '):
             namematch = i.split(' ')[0] + ' ' + i.split(' ')[1][0]
             if any(namematch.lower() in sub for sub in item.name):
+                p.add_run(i).bold = True
+            elif any(normalize(namematch).lower() in sub for sub in item.name):
                 p.add_run(i).bold = True
             else:
                 p.add_run(i)
@@ -192,6 +279,8 @@ if __name__ == '__main__':
         for i in item.authors.split(', '):
             namematch = i.split(' ')[0] + ' ' + i.split(' ')[1][0]
             if any(namematch.lower() in sub for sub in item.name):
+                p.add_run(i).bold = True
+            elif any(normalize(namematch).lower() in sub for sub in item.name):
                 p.add_run(i).bold = True
             else:
                 p.add_run(i)
